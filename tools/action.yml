@@ -9,14 +9,27 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Start LocalStack
+    - name: Install uv pip (contains a faster version of pip)
       run: |
-        pip install --upgrade pip
-        which localstack > /dev/null || pip install localstack
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Create virtual environment for localstack pip calls
+      run: |
+        uv venv .setup-localstack-tmp-venv
+
+    - name: Install localstack and awscli-local
+      run: |
+
+        which localstack > /dev/null || uv pip install localstack
         if [ "$INSTALL_AWSLOCAL" = true ]; then
-          which awslocal > /dev/null || pip install awscli-local[ver1]
+          which awslocal > /dev/null || uv pip install awscli-local[ver1]
         fi
       shell: bash
       env:
         INSTALL_AWSLOCAL: "${{ inputs.install-awslocal }}"
+
+    - name: Cleanup localstack venv
+      if: always()
+      run: |
+        rm -rf .setup-localstack-tmp-venv
 
